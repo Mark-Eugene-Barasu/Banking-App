@@ -11,7 +11,7 @@ interface Account {
   isActive: boolean;
 }
 
-interface User {
+export interface User {
   id: string;
   email: string;
   firstName: string;
@@ -23,9 +23,9 @@ interface User {
 
 interface AuthState {
   user: User | null;
-  token: string | null;
-  setAuth: (user: User, token: string) => void;
-  logout: () => void;
+  isAuthenticated: boolean;
+  setUser: (user: User) => void;
+  logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
@@ -33,20 +33,20 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
-      token: null,
-      setAuth: (user, token) => {
-        localStorage.setItem("token", token);
-        set({ user, token });
-      },
-      logout: () => {
-        localStorage.removeItem("token");
-        set({ user: null, token: null });
+      isAuthenticated: false,
+      setUser: (user) => set({ user, isAuthenticated: true }),
+      logout: async () => {
+        await api.post("/auth/logout").catch(() => {});
+        set({ user: null, isAuthenticated: false });
       },
       refreshUser: async () => {
         const { data } = await api.get("/auth/me");
-        set({ user: data });
+        set({ user: data, isAuthenticated: true });
       },
     }),
-    { name: "auth-store", partialize: (s) => ({ token: s.token, user: s.user }) }
+    {
+      name: "auth-store",
+      partialize: (s) => ({ user: s.user, isAuthenticated: s.isAuthenticated }),
+    }
   )
 );

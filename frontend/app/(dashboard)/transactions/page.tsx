@@ -18,9 +18,9 @@ interface Transaction {
 
 type Tab = "DEPOSIT" | "WITHDRAWAL" | "TRANSFER";
 
-const depositSchema = z.object({ accountId: z.string().min(1), amount: z.coerce.number().positive(), description: z.string().optional() });
-const withdrawSchema = z.object({ accountId: z.string().min(1), amount: z.coerce.number().positive(), description: z.string().optional() });
-const transferSchema = z.object({ fromAccountId: z.string().min(1), toAccountNumber: z.string().min(10), amount: z.coerce.number().positive(), description: z.string().optional() });
+const depositSchema = z.object({ accountId: z.string().min(1), amount: z.number().positive(), description: z.string().optional() });
+const withdrawSchema = z.object({ accountId: z.string().min(1), amount: z.number().positive(), description: z.string().optional() });
+const transferSchema = z.object({ fromAccountId: z.string().min(1), toAccountNumber: z.string().min(10), amount: z.number().positive(), description: z.string().optional() });
 
 type DepositForm = z.infer<typeof depositSchema>;
 type WithdrawForm = z.infer<typeof withdrawSchema>;
@@ -44,7 +44,7 @@ function DepositForm({ accounts, onSuccess }: { accounts: Account[]; onSuccess: 
         </select>
         {errors.accountId && <p className="mt-1 text-xs text-red-500">{errors.accountId.message}</p>}
       </div>
-      <Input label="Amount ($)" id="dep-amount" type="number" step="0.01" placeholder="0.00" error={errors.amount?.message} {...register("amount")} />
+      <Input label="Amount ($)" id="dep-amount" type="number" step="0.01" placeholder="0.00" error={errors.amount?.message} {...register("amount", { valueAsNumber: true })} />
       <Input label="Description (optional)" id="dep-desc" placeholder="Salary, gift..." {...register("description")} />
       <Button type="submit" loading={isSubmitting} className="w-full">Deposit Funds</Button>
     </form>
@@ -69,7 +69,7 @@ function WithdrawForm({ accounts, onSuccess }: { accounts: Account[]; onSuccess:
         </select>
         {errors.accountId && <p className="mt-1 text-xs text-red-500">{errors.accountId.message}</p>}
       </div>
-      <Input label="Amount ($)" id="wd-amount" type="number" step="0.01" placeholder="0.00" error={errors.amount?.message} {...register("amount")} />
+      <Input label="Amount ($)" id="wd-amount" type="number" step="0.01" placeholder="0.00" error={errors.amount?.message} {...register("amount", { valueAsNumber: true })} />
       <Input label="Description (optional)" id="wd-desc" placeholder="Rent, groceries..." {...register("description")} />
       <Button type="submit" loading={isSubmitting} className="w-full" variant="danger">Withdraw Funds</Button>
     </form>
@@ -95,7 +95,7 @@ function TransferForm({ accounts, onSuccess }: { accounts: Account[]; onSuccess:
         {errors.fromAccountId && <p className="mt-1 text-xs text-red-500">{errors.fromAccountId.message}</p>}
       </div>
       <Input label="Recipient Account Number" id="tr-to" placeholder="10-digit account number" error={errors.toAccountNumber?.message} {...register("toAccountNumber")} />
-      <Input label="Amount ($)" id="tr-amount" type="number" step="0.01" placeholder="0.00" error={errors.amount?.message} {...register("amount")} />
+      <Input label="Amount ($)" id="tr-amount" type="number" step="0.01" placeholder="0.00" error={errors.amount?.message} {...register("amount", { valueAsNumber: true })} />
       <Input label="Description (optional)" id="tr-desc" placeholder="Payment, split bill..." {...register("description")} />
       <Button type="submit" loading={isSubmitting} className="w-full">Send Transfer</Button>
     </form>

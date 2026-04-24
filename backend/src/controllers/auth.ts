@@ -20,9 +20,17 @@ const loginSchema = z.object({
 const generateAccountNumber = () =>
   Math.floor(1000000000 + Math.random() * 9000000000).toString();
 
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "strict" as const,
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  path: "/",
+};
+
 const signToken = (userId: string) =>
-  jwt.sign({ userId }, process.env.JWT_SECRET!, {
-    expiresIn: process.env.JWT_EXPIRES_IN || "7d",
+  jwt.sign({ userId }, process.env.JWT_SECRET as string, {
+    expiresIn: (process.env.JWT_EXPIRES_IN || "7d") as jwt.SignOptions["expiresIn"],
   });
 
 export const register = async (req: Request, res: Response) => {
@@ -37,19 +45,16 @@ export const register = async (req: Request, res: Response) => {
         ...data,
         password: hashed,
         accounts: {
-          create: {
-            accountNumber: generateAccountNumber(),
-            type: "CHECKING",
-            balance: 0,
-          },
+          create: { accountNumber: generateAccountNumber(), type: "CHECKING", balance: 0 },
         },
       },
       include: { accounts: true },
     });
 
-    const { password: _, ...userWithoutPassword } = user;
+    const { password: _, ...safe } = user;
     const token = signToken(user.id);
-    res.status(201).json({ token, user: userWithoutPassword });
+    res.cookie("token", token, COOKIE_OPTIONS);
+    res.status(201).json({ user: safe });
   } catch (err) {
     if (err instanceof z.ZodError) return res.status(400).json({ errors: err.errors });
     res.status(500).json({ message: "Server error" });
@@ -68,13 +73,19 @@ export const login = async (req: Request, res: Response) => {
     const valid = await bcrypt.compare(data.password, user.password);
     if (!valid) return res.status(401).json({ message: "Invalid credentials" });
 
-    const { password: _, ...userWithoutPassword } = user;
+    const { password: _, ...safe } = user;
     const token = signToken(user.id);
-    res.json({ token, user: userWithoutPassword });
+    res.cookie("token", token, COOKIE_OPTIONS);
+    res.json({ user: safe });
   } catch (err) {
     if (err instanceof z.ZodError) return res.status(400).json({ errors: err.errors });
     res.status(500).json({ message: "Server error" });
   }
+};
+
+export const logout = (_req: Request, res: Response) => {
+  res.clearCookie("token", { path: "/" });
+  res.json({ message: "Logged out" });
 };
 
 export const getMe = async (req: Request & { userId?: string }, res: Response) => {
@@ -84,8 +95,8 @@ export const getMe = async (req: Request & { userId?: string }, res: Response) =
       include: { accounts: true },
     });
     if (!user) return res.status(404).json({ message: "User not found" });
-    const { password: _, ...userWithoutPassword } = user;
-    res.json(userWithoutPassword);
+    const { password: _, ...safe } = user;
+    res.json(safe);
   } catch {
     res.status(500).json({ message: "Server error" });
   }

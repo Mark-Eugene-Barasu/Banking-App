@@ -20,7 +20,7 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export default function ProfilePage() {
-  const { user, refreshUser } = useAuthStore();
+  const { user, refreshUser, setUser } = useAuthStore();
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
 
@@ -34,8 +34,8 @@ export default function ProfilePage() {
 
   const onSubmit = async (data: FormData) => {
     try {
-      await api.patch("/users/profile", data);
-      await refreshUser();
+      const res = await api.patch("/users/profile", data);
+      setUser({ ...user!, ...res.data });
       setSuccess(true);
       setError("");
       setTimeout(() => setSuccess(false), 3000);

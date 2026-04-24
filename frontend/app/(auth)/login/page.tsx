@@ -19,7 +19,7 @@ type FormData = z.infer<typeof schema>;
 
 export default function LoginPage() {
   const router = useRouter();
-  const setAuth = useAuthStore((s) => s.setAuth);
+  const setUser = useAuthStore((s) => s.setUser);
   const [error, setError] = useState("");
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
@@ -30,7 +30,7 @@ export default function LoginPage() {
     try {
       setError("");
       const res = await api.post("/auth/login", data);
-      setAuth(res.data.user, res.data.token);
+      setUser(res.data.user);
       router.push("/dashboard");
     } catch (err: any) {
       setError(err.response?.data?.message || "Login failed");

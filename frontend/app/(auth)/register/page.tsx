@@ -22,7 +22,7 @@ type FormData = z.infer<typeof schema>;
 
 export default function RegisterPage() {
   const router = useRouter();
-  const setAuth = useAuthStore((s) => s.setAuth);
+  const setUser = useAuthStore((s) => s.setUser);
   const [error, setError] = useState("");
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
@@ -33,7 +33,7 @@ export default function RegisterPage() {
     try {
       setError("");
       const res = await api.post("/auth/register", data);
-      setAuth(res.data.user, res.data.token);
+      setUser(res.data.user);
       router.push("/dashboard");
     } catch (err: any) {
       setError(err.response?.data?.message || "Registration failed");
